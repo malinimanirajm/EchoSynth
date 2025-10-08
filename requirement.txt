@@ -1,0 +1,39 @@
+# Core data processing
+pandas>=2.1.0
+numpy>=1.26.0
+
+# Data visualization (optional for dashboards)
+matplotlib>=3.8.0
+seaborn>=0.12.2
+plotly>=5.17.0
+
+# PDF/Text ingestion
+PyMuPDF>=1.23.2
+pdfminer.six>=20221105
+
+# AWS SDK for Python
+boto3>=1.26.160
+
+# OpenAI & LLM integrations
+openai>=1.28.0
+langchain>=0.1.214
+sentence-transformers>=2.2.2
+
+# Vector databases / embeddings
+chromadb>=0.4.0
+faiss-cpu>=1.7.4
+
+# Environment variable management
+python-dotenv>=1.0.1
+
+# Web/API frameworks (for internal chatbot/dashboard)
+fastapi>=0.111.1
+uvicorn>=0.23.2
+streamlit>=1.27.0
+
+# Optional: NLP & text preprocessing
+nltk>=3.9.0
+spacy>=3.8.0
+
+# Optional: requests for APIs or scraping
+requests>=2.32.0
