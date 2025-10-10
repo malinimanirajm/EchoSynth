@@ -37,3 +37,10 @@ spacy>=3.8.0
 
 # Optional: requests for APIs or scraping
 requests>=2.32.0
+
+pandas
+nltk
+spacy
+textblob
+sentence-transformers
+bertopic tqdm
