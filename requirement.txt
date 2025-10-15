@@ -43,4 +43,49 @@ nltk
 spacy
 textblob
 sentence-transformers
-bertopic tqdm
+bertopic
+tqdm
+
+# Core utilities
+pandas
+numpy
+tqdm
+requests
+python-dotenv
+
+# NLP and Text Processing
+nltk
+spacy
+textblob
+beautifulsoup4
+
+# Sentiment & Emotion Analysis
+vaderSentiment
+
+# Transformers & Embeddings
+torch
+transformers
+sentence-transformers
+
+# Topic Modeling
+bertopic
+
+# Visualization (optional for EDA)
+matplotlib
+seaborn
+wordcloud
+
+# Machine Learning
+scikit-learn
+
+# Vector Database (for chatbot integration)
+chromadb
+faiss-cpu
+
+# Data handling and compression
+datasets
+gzip
+
+# Jupyter support (for notebooks)
+notebook
+ipykernel
