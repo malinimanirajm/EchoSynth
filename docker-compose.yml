@@ -1,0 +1,16 @@
+version: '3'
+services:
+  echosynth:
+    build: .
+    container_name: echosynth
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - chromadb
+    command: python src/feature_engineering.py
+
+  chromadb:
+    image: chromadb/chroma
+    container_name: chromadb
+    ports:
+      - "8000:8000"
