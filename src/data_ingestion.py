@@ -1,111 +1,110 @@
-"""
-data_ingestion.py
------------------
-Module for downloading, reading, cleaning, and preparing the Amazon Reviews dataset
-for use in the EchoSynth project.
-"""
-
-import os
-import pandas as pd
-import re
-import gzip
 import json
-from tqdm import tqdm
+import os
+from datetime import datetime
 
-# ============== CONFIG ==============
-DATA_DIR = "data"
-RAW_FILE = os.path.join(DATA_DIR, "amazon_reviews.json.gz")
-PROCESSED_FILE = os.path.join(DATA_DIR, "cleaned_reviews.csv")
-SAMPLE_SIZE = 100000  # adjust based on your system (e.g., 100k rows for dev)
-
-# Ensure data directory exists
-os.makedirs(DATA_DIR, exist_ok=True)
-
-
-# ============== TEXT CLEANING HELPERS ==============
-def clean_text(text: str) -> str:
-    """Basic text normalization."""
-    if not isinstance(text, str):
-        return ""
-    text = text.lower()
-    text = re.sub(r"http\S+", "", text)  # remove URLs
-    text = re.sub(r"[^a-z\s]", "", text)  # keep only letters and spaces
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
-
-
-# ============== DATA LOADING FUNCTIONS ==============
-def load_gzip_json(filepath: str, sample_size: int = 100000) -> pd.DataFrame:
+def process_reviews_2023(file_path):
     """
-    Reads a compressed .json.gz file containing line-delimited JSON (Amazon review format).
-    Returns a sampled DataFrame.
+    Processes the Amazon Reviews 2023 dataset (JSON Lines format).
+    It maps the new field names to the old structure and processes them efficiently.
+
+    Args:
+        file_path (str): The path to the downloaded .jsonl review file.
     """
-    print(f"🔹 Loading dataset from: {filepath}")
+    # -----------------------------------------------------------
+    # 1. New Field Mapping Dictionary for easy reference
+    # -----------------------------------------------------------
+    FIELD_MAP = {
+        'user_id': 'reviewerID',      # new field, maps to old 'reviewerID'
+        'parent_asin': 'asin',        # new field, maps to old 'asin'
+        'text': 'reviewText',         # new field, maps to old 'reviewText'
+        'rating': 'overall',          # new field, maps to old 'overall'
+        'title': 'summary',           # new field, maps to old 'summary'
+        'sort_timestamp': 'unixReviewTime' # new field, maps to old 'unixReviewTime' (Note: 2023 is in milliseconds!)
+    }
 
-    reviews = []
-    with gzip.open(filepath, "rb") as f:
-        for i, line in enumerate(f):
-            if i >= sample_size:
-                break
-            reviews.append(json.loads(line))
-            if (i + 1) % 10000 == 0:
-                print(f"   → Loaded {i+1:,} records...")
-
-    df = pd.DataFrame(reviews)
-    print(f"✅ Loaded {len(df):,} rows.")
-    return df
-
-
-# ============== CLEANING PIPELINE ==============
-def preprocess_reviews(df: pd.DataFrame) -> pd.DataFrame:
-    """Select and clean relevant fields from the dataset."""
-    print("🧹 Cleaning and normalizing data...")
-
-    # Keep key columns if they exist
-    keep_cols = ["review_body", "product_title", "star_rating", "product_category"]
-    df = df[[c for c in keep_cols if c in df.columns]].copy()
-
-    # Rename for consistency
-    df.rename(columns={
-        "review_body": "review",
-        "star_rating": "rating",
-        "product_title": "product",
-        "product_category": "category"
-    }, inplace=True)
-
-    # Clean text
-    tqdm.pandas(desc="Cleaning reviews")
-    df["review"] = df["review"].progress_apply(clean_text)
-
-    # Drop missing or short entries
-    df.dropna(subset=["review"], inplace=True)
-    df = df[df["review"].str.len() > 10]
-
-    print(f"✅ Cleaned dataset: {len(df):,} valid reviews.")
-    return df
-
-
-# ============== MAIN EXECUTION ==============
-def main():
-    """Main entry point for data ingestion."""
-    print("🚀 Starting data ingestion for EchoSynth...")
-
-    # Check if file exists
-    if not os.path.exists(RAW_FILE):
-        print(f"❌ Raw data not found at {RAW_FILE}")
-        print("➡️  Please download the Amazon Reviews dataset from:")
-        print("   https://registry.opendata.aws/amazon-reviews/")
-        print("   and place it under the 'data/' directory.")
+    if not os.path.exists(file_path):
+        print(f"❌ Error: File not found at path: {file_path}")
+        print("Please download one of the category-specific .jsonl files (e.g., 'raw_review_Books.jsonl') and place it in the correct directory.")
         return
 
-    # Load and preprocess
-    df = load_gzip_json(RAW_FILE, sample_size=SAMPLE_SIZE)
-    df_clean = preprocess_reviews(df)
+    # Counter to track progress and successfully processed lines
+    review_count = 0
+    successful_count = 0
 
-    # Save processed data
-    df_clean.to_csv(PROCESSED_FILE, index=False)
-    print(f"💾 Saved cleaned data to: {PROCESSED_FILE}")
+    print(f"🚀 Starting to process file: {file_path}")
+    print("--------------------------------------------------")
 
+    # -----------------------------------------------------------
+    # 2. Efficient Line-by-Line Processing (.jsonl format)
+    # -----------------------------------------------------------
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            review_count += 1
+            
+            # Skip empty lines or malformed lines
+            if not line.strip():
+                continue
+
+            try:
+                # Load one JSON object per line
+                review_data = json.loads(line)
+                
+                # Create a structure that mimics the old one, but uses new values
+                # If your original code used the OLD field names, the variables 
+                # below are what you would use to replace them.
+                
+                # Get and clean core data
+                reviewer_id = review_data.get('user_id')
+                asin = review_data.get('parent_asin')
+                overall_rating = review_data.get('rating')
+                review_text = review_data.get('text')
+                summary = review_data.get('title')
+                
+                # Handle the new timestamp (in milliseconds) and convert to a datetime object
+                timestamp_ms = review_data.get('sort_timestamp')
+                unix_time_sec = None
+                review_time_str = None
+                if timestamp_ms is not None:
+                    unix_time_sec = int(timestamp_ms / 1000)
+                    review_time_str = datetime.fromtimestamp(unix_time_sec).strftime('%Y-%m-%d %H:%M:%S')
+
+                # ***********************************************
+                # 3. YOUR ORIGINAL PROCESSING LOGIC GOES HERE
+                # ***********************************************
+                
+                # --- Example of what your original logic might have done: ---
+                if reviewer_id and asin and overall_rating and review_text:
+                    # You can now use these variables in your existing functions:
+                    # e.g., analyze_sentiment(review_text)
+                    # e.g., save_to_database(reviewer_id, asin, overall_rating, review_text)
+                    
+                    if successful_count % 100000 == 0:
+                        print(f"✅ Processed {successful_count:,} reviews. Sample: [ASIN: {asin}, Rating: {overall_rating}, Time: {review_time_str}]")
+                    
+                    successful_count += 1
+                # ------------------------------------------------------------
+                
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Warning: JSON Decode Error on line {review_count:,}. Skipping. Error: {e}")
+            
+            # Optional: Stop after a certain number of reviews for quick testing
+            # if review_count > 1000000:
+            #     break 
+
+    print("--------------------------------------------------")
+    print(f"✨ Processing Complete!")
+    print(f"Total lines read: {review_count:,}")
+    print(f"Total reviews successfully processed: {successful_count:,}")
+    print(f"File: {file_path}")
+
+
+# =================================================================
+# SCRIPT EXECUTION
+# =================================================================
+
+# *** IMPORTANT: Change this filename to the category you downloaded ***
+# e.g., 'raw_review_Books.jsonl'
+DATASET_FILENAME = 'raw_review_Electronics.jsonl' 
 
 if __name__ == "__main__":
-    main()
+    process_reviews_2023(DATASET_FILENAME)
